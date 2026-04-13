@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Banque Misr — Onboarding</title>
+  <!-- Google Fonts: Barlow (English) + Cairo (Arabic) -->
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none; /* similar to native feel, tap/swipe remains */
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: black;
+      overflow: hidden;
+      font-family: 'Barlow', sans-serif;
+      height: 100vh;
+      width: 100vw;
+      position: fixed;
+    }
+
+    /* main container */
+    .app {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: black;
+    }
+
+    /* slides container: absolute to stack images */
+    .slides-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+      will-change: opacity;
+    }
+
+    .slide.active {
+      opacity: 1;
+      z-index: 2;
+    }
+
+    .slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+
+    /* gradient overlay (same as flutter) */
+    .gradient-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 3;
+      pointer-events: none;
+      background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.55) 0%,
+        rgba(0,0,0,0.10) 30%,
+        transparent 52%,
+        rgba(0,0,0,0.55) 75%,
+        rgba(0,0,0,1) 100%
+      );
+    }
+
+    /* fullscreen touch area + swipe/tap */
+    .touch-area {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 4;
+      cursor: pointer;
+    }
+
+    /* top UI elements (progress, logo, lang) */
+    .top-ui {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 5;
+      padding-top: env(safe-area-inset-top, 0);
+      pointer-events: none; /* children that need clicks set pointer-events auto */
+    }
+
+    .progress-bar-row {
+      padding: 12px 16px 0 16px;
+      pointer-events: none;
+    }
+
+    .progress-track {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .progress-segment {
+      border-radius: 10px;
+      height: 4px;
+      background-color: rgba(255,255,255,0.35);
+      transition: background-color 0.1s ease;
+      overflow: hidden;
+    }
+
+    .progress-active-fill {
+      height: 100%;
+      width: 0%;
+      background-color: white;
+      border-radius: 10px;
+    }
+
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px 8px 21px;
+      pointer-events: auto;
+    }
+
+    .logo img {
+      height: 38px;
+      width: auto;
+      max-width: 110px;
+      object-fit: contain;
+    }
+
+    .lang-toggle {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: transparent;
+      padding: 6px 10px;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .lang-toggle:active { opacity: 0.7; }
+
+    .lang-icon {
+      color: white;
+      font-size: 19px;
+    }
+
+    .lang-text {
+      font-family: 'Barlow', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      color: white;
+      letter-spacing: 0.3px;
+    }
+
+    /* title text */
+    .title-wrapper {
+      width: 100%;
+      padding: 0 24px;
+      margin-top: 12px;
+      pointer-events: none;
+      text-align: center;
+    }
+
+    .slide-title {
+      color: white;
+      font-weight: 700;
+      font-size: 20px;
+      line-height: 1.25;
+      text-align: center;
+      max-width: 90%;
+      margin: 0 auto;
+    }
+
+    /* arabic font override */
+    body.arabic .slide-title {
+      font-family: 'Cairo', sans-serif;
+    }
+    body.arabic .lang-text {
+      font-family: 'Cairo', sans-serif;
+    }
+    body.arabic .bottom-cta .join-btn {
+      font-family: 'Cairo', sans-serif;
+    }
+    body.arabic .bottom-cta .already-text {
+      font-family: 'Cairo', sans-serif;
+    }
+
+    /* bottom CTA */
+    .bottom-cta {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      z-index: 5;
+      padding: 0 20px env(safe-area-inset-bottom, 32px) 20px;
+      padding-bottom: max(32px, env(safe-area-inset-bottom, 32px));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      pointer-events: none;
+    }
+
+    .join-btn {
+      width: 100%;
+      max-width: 340px;
+      height: 48px;
+      background-color: #BF3547;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-family: 'Barlow', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.05s;
+      pointer-events: auto;
+      box-shadow: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .join-btn:active {
+      background-color: #a52e3e;
+      transform: scale(0.98);
+    }
+
+    .already-text {
+      margin-top: 24px;
+      font-family: 'Barlow', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+      color: white;
+      cursor: pointer;
+      pointer-events: auto;
+      padding: 8px 16px;
+      transition: opacity 0.2s;
+    }
+    .already-text:active {
+      opacity: 0.7;
+    }
+
+    /* fallback for images missing */
+    .fallback-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      background-color: #1C1C1C;
+      color: rgba(255,255,255,0.3);
+      font-size: 3rem;
+    }
+
+    /* responsive adjustments */
+    @media (max-width: 480px) {
+      .top-row {
+        padding: 12px 18px 8px 18px;
+      }
+      .slide-title {
+        font-size: 18px;
+      }
+      .progress-bar-row {
+        padding: 8px 16px 0 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- Slides container with images -->
+  <div class="slides-container" id="slidesContainer"></div>
+  <div class="gradient-overlay"></div>
+  <div class="touch-area" id="touchArea"></div>
+
+  <div class="top-ui">
+    <div class="progress-bar-row" id="progressRow"></div>
+    <div class="top-row">
+      <div class="logo" id="logoArea">
+        <img id="logoImg" alt="Banque Misr" style="height:38px;">
+      </div>
+      <div class="lang-toggle" id="langToggle">
+        <span class="lang-icon">🌐</span>
+        <span class="lang-text" id="langText">EN</span>
+      </div>
+    </div>
+    <div class="title-wrapper">
+      <div class="slide-title" id="slideTitle">Easily manage all your banking</div>
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <button class="join-btn" id="joinBtn">Join Banque Misr</button>
+    <div class="already-text" id="alreadyText">Already a BM customer</div>
+  </div>
+</div>
+
+<script>
+  // ----- DATA (matches the Flutter slides) -----
+  const SLIDES = [
+    { titleEn: "Easily manage all your banking", titleAr: "إدارة جميع أعمالك المصرفية بسهولة", asset: "assets/11.png" },
+    { titleEn: "Instant transfers, anytime you need", titleAr: "تحويلات فورية في أي وقت تحتاج", asset: "assets/12.png" },
+    { titleEn: "Track and manage installments easily", titleAr: "تتبع وإدارة الأقساط بسهولة", asset: "assets/13.png" },
+    { titleEn: "Earn rewards as you spend", titleAr: "اكسب المكافآت أثناء إنفاقك", asset: "assets/14.png" }
+  ];
+  const TOTAL_SLIDES = SLIDES.length;
+  const SLIDE_DURATION_MS = 5000;       // 5 seconds auto advance
+  const FADE_DURATION_MS = 300;         // matches kFadeDuration
+
+  // ----- state -----
+  let currentIndex = 0;
+  let currentLocale = 'en';        // 'en' or 'ar'
+  let autoTimer = null;
+  let progressInterval = null;      // for manual progress bar update (interval based)
+  let animationStartTime = 0;
+  let animationFrame = null;
+  let progressSegments = [];
+
+  // touch/swipe handling
+  let pointerStartX = 0;
+  let pointerStartY = 0;
+  let pointerMoved = false;
+
+  // DOM elements
+  const slidesContainer = document.getElementById('slidesContainer');
+  const slideTitleEl = document.getElementById('slideTitle');
+  const langTextSpan = document.getElementById('langText');
+  const joinBtn = document.getElementById('joinBtn');
+  const alreadyText = document.getElementById('alreadyText');
+  const langToggle = document.getElementById('langToggle');
+  const touchArea = document.getElementById('touchArea');
+  const logoImg = document.getElementById('logoImg');
+
+  // Helper: build slides DOM
+  function buildSlides() {
+    slidesContainer.innerHTML = '';
+    for (let i = 0; i < TOTAL_SLIDES; i++) {
+      const slideDiv = document.createElement('div');
+      slideDiv.className = 'slide';
+      if (i === currentIndex) slideDiv.classList.add('active');
+      const img = document.createElement('img');
+      img.src = SLIDES[i].asset;
+      img.alt = `slide ${i+1}`;
+      img.onerror = function() {
+        // if image fails, show fallback icon
+        this.style.display = 'none';
+        const fallback = document.createElement('div');
+        fallback.className = 'fallback-icon';
+        fallback.innerHTML = '📷';
+        slideDiv.appendChild(fallback);
+      };
+      slideDiv.appendChild(img);
+      slidesContainer.appendChild(slideDiv);
+    }
+  }
+
+  // update active slide with fade transition (opacity)
+  function setActiveSlide(index) {
+    const slides = document.querySelectorAll('.slide');
+    if (!slides.length) return;
+    // remove active class from all
+    slides.forEach((slide, i) => {
+      slide.classList.remove('active');
+    });
+    slides[index].classList.add('active');
+  }
+
+  // progress bar builder / update dynamically based on current index and progress (0..1)
+  function buildProgressBars() {
+    const progressRow = document.getElementById('progressRow');
+    if (!progressRow) return;
+    const screenWidth = window.innerWidth;
+    const leftPadding = 16;
+    const rightPadding = 16;
+    const gapWidth = 6;
+    const totalGaps = TOTAL_SLIDES * gapWidth;
+    let availableWidth = screenWidth - leftPadding - rightPadding - totalGaps;
+    if (availableWidth < 40) availableWidth = 40;
+    const barWidth = availableWidth / TOTAL_SLIDES;
+
+    progressRow.innerHTML = '';
+    const trackDiv = document.createElement('div');
+    trackDiv.className = 'progress-track';
+    trackDiv.style.gap = `${gapWidth}px`;
+    trackDiv.style.justifyContent = 'center';
+
+    for (let i = 0; i < TOTAL_SLIDES; i++) {
+      const segmentOuter = document.createElement('div');
+      segmentOuter.style.width = `${barWidth}px`;
+      segmentOuter.style.height = '4px';
+      segmentOuter.style.borderRadius = '10px';
+      segmentOuter.style.backgroundColor = 'rgba(255,255,255,0.35)';
+      segmentOuter.style.overflow = 'hidden';
+      const fillDiv = document.createElement('div');
+      fillDiv.className = 'progress-fill';
+      fillDiv.style.height = '100%';
+      fillDiv.style.width = '0%';
+      fillDiv.style.backgroundColor = 'white';
+      fillDiv.style.borderRadius = '10px';
+      segmentOuter.appendChild(fillDiv);
+      trackDiv.appendChild(segmentOuter);
+    }
+    progressRow.appendChild(trackDiv);
+    // store references
+    progressSegments = Array.from(trackDiv.children).map(div => div.querySelector('.progress-fill'));
+    updateProgressFill(0); // initial
+  }
+
+  // update progress fill: for index < currentIndex -> full, == currentIndex -> given fraction, > -> 0%
+  function updateProgressFill(fraction = 0) {
+    if (!progressSegments.length) return;
+    for (let i = 0; i < TOTAL_SLIDES; i++) {
+      const fill = progressSegments[i];
+      if (!fill) continue;
+      if (i < currentIndex) {
+        fill.style.width = '100%';
+      } else if (i === currentIndex) {
+        fill.style.width = `${Math.min(100, Math.max(0, fraction * 100))}%`;
+      } else {
+        fill.style.width = '0%';
+      }
+    }
+  }
+
+  // cancel existing timer & progress animation
+  function cancelAutoTimer() {
+    if (autoTimer) {
+      clearTimeout(autoTimer);
+      autoTimer = null;
+    }
+    if (animationFrame) {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    }
+    if (progressInterval) {
+      clearInterval(progressInterval);
+      progressInterval = null;
+    }
+  }
+
+  // start auto slide timer and progress animation (linearly from 0 to 1 over SLIDE_DURATION_MS)
+  function startAutoTimer() {
+    cancelAutoTimer();
+    const startFraction = 0;
+    const startTime = performance.now();
+    function updateProgress(now) {
+      const elapsed = now - startTime;
+      let fraction = elapsed / SLIDE_DURATION_MS;
+      if (fraction >= 1) {
+        fraction = 1;
+        updateProgressFill(1);
+        // advance to next slide
+        advanceToNextSlide();
+        return;
+      }
+      updateProgressFill(fraction);
+      animationFrame = requestAnimationFrame(updateProgress);
+    }
+    animationFrame = requestAnimationFrame(updateProgress);
+    // also set a timeout as a fallback to advance exactly after duration
+    autoTimer = setTimeout(() => {
+      // if animation didn't trigger advance already, do it
+      if (currentIndex !== undefined) {
+        advanceToNextSlide();
+      }
+    }, SLIDE_DURATION_MS);
+  }
+
+  // refresh title & direction based on locale
+  function refreshUIText() {
+    const isArabic = currentLocale === 'ar';
+    const slide = SLIDES[currentIndex];
+    slideTitleEl.innerText = isArabic ? slide.titleAr : slide.titleEn;
+    langTextSpan.innerText = isArabic ? 'EN' : 'AR';
+    joinBtn.innerText = isArabic ? 'انضم إلى بنك مصر' : 'Join Banque Misr';
+    alreadyText.innerText = isArabic ? 'عميل بالفعل في بنك مصر' : 'Already a BM customer';
+
+    // update html direction & body class for fonts
+    const htmlRoot = document.documentElement;
+    if (isArabic) {
+      htmlRoot.setAttribute('dir', 'rtl');
+      document.body.classList.add('arabic');
+    } else {
+      htmlRoot.setAttribute('dir', 'ltr');
+      document.body.classList.remove('arabic');
+    }
+  }
+
+  // move to specific slide index (with resetting timer)
+  function goToSlide(newIndex, resetTimer = true) {
+    if (newIndex === currentIndex) {
+      if (resetTimer) {
+        // reset progress animation anyway
+        cancelAutoTimer();
+        startAutoTimer();
+      }
+      return;
+    }
+    if (newIndex < 0) newIndex = 0;
+    if (newIndex >= TOTAL_SLIDES) newIndex = TOTAL_SLIDES - 1;
+    currentIndex = newIndex;
+    setActiveSlide(currentIndex);
+    refreshUIText();
+    if (resetTimer) {
+      // restart progress animation from 0
+      cancelAutoTimer();
+      startAutoTimer();
+    } else {
+      // if resetTimer false (like from manual swipe after previous) but still keep fresh timer
+      cancelAutoTimer();
+      startAutoTimer();
+    }
+  }
+
+  function advanceToNextSlide() {
+    const next = (currentIndex + 1) % TOTAL_SLIDES;
+    goToSlide(next, true);
+  }
+
+  function goToPrevSlide() {
+    if (currentIndex === 0) return;
+    const prev = currentIndex - 1;
+    goToSlide(prev, true);
+  }
+
+  function goToNextSlide() {
+    const next = (currentIndex + 1) % TOTAL_SLIDES;
+    goToSlide(next, true);
+  }
+
+  // toggle language: update locale, rebuild UI text and also refresh title + progress keep slide same
+  function toggleLanguage() {
+    currentLocale = currentLocale === 'en' ? 'ar' : 'en';
+    refreshUIText();
+    // optional: we keep same slide index, but no need to restart timer? keep timer consistent
+    // but to avoid losing progress bar animation we keep current progress fill untouched
+    // but fraction continues correctly. update fill reference doesn't change.
+  }
+
+  // handle swipe and tap (matching flutter behavior: in LTR tap left = previous, right = next, but in RTL mirrored)
+  function handleTapOrSwipe(totalDx, totalDy, isSwipe, startSideFraction) {
+    const isArabic = currentLocale === 'ar';
+    // Determine if it's a tap based on no significant movement
+    if (!isSwipe) {
+      // tap: use screen half detection
+      const screenWidth = window.innerWidth;
+      const tapX = startSideFraction * screenWidth; // we stored absolute X when pointer up
+      if (isArabic) {
+        // arabic: right side (x > half) => previous, left side => next
+        if (tapX > screenWidth / 2) {
+          goToPrevSlide();
+        } else {
+          goToNextSlide();
+        }
+      } else {
+        // LTR: left half -> previous, right half -> next
+        if (tapX < screenWidth / 2) {
+          goToPrevSlide();
+        } else {
+          goToNextSlide();
+        }
+      }
+    } else {
+      // swipe
+      if (isArabic) {
+        // arabic: swipe left (negative dx) => next? wait careful: In RTL UI, physical swipe left means go to "next" slide (since content flows RTL)
+        // from Flutter code: if arabic: totalDx < 0 => _previous() else _next(). So negative dx (left swipe) = previous, positive (right swipe) = next.
+        if (totalDx < 0) {
+          goToPrevSlide();
+        } else {
+          goToNextSlide();
+        }
+      } else {
+        // LTR: swipe left (negative) = next, right (positive) = previous
+        if (totalDx < 0) {
+          goToNextSlide();
+        } else {
+          goToPrevSlide();
+        }
+      }
+    }
+  }
+
+  // ----- Touch / Pointer handling (mouse + touch) -----
+  let activePointer = false;
+  let startX = 0, startY = 0;
+  let hasMoved = false;
+
+  function onPointerStart(e) {
+    e.preventDefault(); // avoid any scrolling while swiping
+    activePointer = true;
+    const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+    const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+    startX = clientX;
+    startY = clientY;
+    hasMoved = false;
+  }
+
+  function onPointerMove(e) {
+    if (!activePointer) return;
+    const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+    const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+    const dx = Math.abs(clientX - startX);
+    const dy = Math.abs(clientY - startY);
+    if (dx > 8 || dy > 8) {
+      hasMoved = true;
+    }
+  }
+
+  function onPointerEnd(e) {
+    if (!activePointer) return;
+    activePointer = false;
+    let endX = e.clientX ?? (e.changedTouches ? e.changedTouches[0].clientX : 0);
+    let endY = e.clientY ?? (e.changedTouches ? e.changedTouches[0].clientY : 0);
+    if (endX === undefined) {
+      endX = startX;
+      endY = startY;
+    }
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+    const absDeltaX = Math.abs(deltaX);
+    const absDeltaY = Math.abs(deltaY);
+
+    const isSwipe = hasMoved && absDeltaX > 40 && absDeltaX > absDeltaY;
+    if (isSwipe) {
+      handleTapOrSwipe(deltaX, deltaY, true, endX / window.innerWidth);
+    } else {
+      // tap
+      handleTapOrSwipe(deltaX, deltaY, false, endX / window.innerWidth);
+    }
+    hasMoved = false;
+  }
+
+  function attachTouchEvents() {
+    const area = touchArea;
+    area.addEventListener('touchstart', onPointerStart, { passive: false });
+    area.addEventListener('touchmove', onPointerMove, { passive: false });
+    area.addEventListener('touchend', onPointerEnd);
+    area.addEventListener('mousedown', onPointerStart);
+    window.addEventListener('mousemove', (e) => {
+      if (activePointer) onPointerMove(e);
+    });
+    window.addEventListener('mouseup', (e) => {
+      if (activePointer) onPointerEnd(e);
+    });
+  }
+
+  // on window resize, rebuild progress bar layout
+  let resizeTimeout;
+  function handleResize() {
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      buildProgressBars();
+      // restore current progress fraction from active animation? simpler: restart timer? but keep current fraction?
+      // we just rebuild visuals and sync with current progress by reading animation state? we re-init fill from current timer.
+      // since timer runs, we store currentFraction? easier: restart timer to avoid mismatch. But that resets progress for current slide.
+      // Better: get current animation progress from stored animation start? We can recompute manually using elapsed.
+      // Because rebuild progress removes DOM, we must sync progress value again.
+      if (animationFrame) {
+        // we preserve existing timer: we need to know current fraction without resetting user experience.
+        // We'll compute time elapsed from last start? we don't have stored. Actually startAutoTimer sets startTime variable internally.
+        // We'll re-call refresh progress by using stored current animation progress? Simpler: cancel timer and restart with 0 fraction -> not ideal but matches UX after resize.
+        // To preserve seamless, we just rebuild bars, and then restart timer from 0? That would reset progress to 0 but user experience slightly changes but not major.
+        // Better: we keep the timer running but since we rebuild progress bars, we lose fill data. So we capture current fraction using existing progressSegments? but they get destroyed.
+        // We'll get the current fill fraction from stored variable: we can keep a global variable currentProgressFraction.
+        if (window._currentProgressFraction !== undefined) {
+          const frac = window._currentProgressFraction;
+          updateProgressFill(frac);
+        } else {
+          updateProgressFill(0);
+        }
+      } else {
+        updateProgressFill(0);
+      }
+    }, 150);
+  }
+
+  // update progress fraction variable and store
+  function setProgressFraction(frac) {
+    window._currentProgressFraction = frac;
+    updateProgressFill(frac);
+  }
+
+  // override startAutoTimer to store fraction and update custom
+  const originalStart = startAutoTimer;
+  startAutoTimer = function() {
+    cancelAutoTimer();
+    const startTime = performance.now();
+    function update(now) {
+      const elapsed = now - startTime;
+      let fraction = elapsed / SLIDE_DURATION_MS;
+      if (fraction >= 1) {
+        fraction = 1;
+        setProgressFraction(1);
+        advanceToNextSlide();
+        return;
+      }
+      setProgressFraction(fraction);
+      animationFrame = requestAnimationFrame(update);
+    }
+    animationFrame = requestAnimationFrame(update);
+    autoTimer = setTimeout(() => {
+      if (currentIndex !== undefined) advanceToNextSlide();
+    }, SLIDE_DURATION_MS);
+  };
+
+  // Also fix goToSlide to restart timer properly
+  const originalGoTo = goToSlide;
+  goToSlide = function(newIndex, resetTimer = true) {
+    if (newIndex === currentIndex) {
+      if (resetTimer) {
+        cancelAutoTimer();
+        startAutoTimer();
+      }
+      return;
+    }
+    currentIndex = newIndex;
+    setActiveSlide(currentIndex);
+    refreshUIText();
+    if (resetTimer) {
+      cancelAutoTimer();
+      startAutoTimer();
+    }
+  };
+  window.goToSlide = goToSlide;
+  window.advanceToNextSlide = advanceToNextSlide;
+
+  // fix refresh UI and logo load
+  function initLogo() {
+    // Use horizontal.png as per flutter assets expectation; if not exist, show fallback but we attempt
+    logoImg.src = "assets/horizontal.png";
+    logoImg.onerror = () => {
+      logoImg.style.display = 'none';
+      const fallbackSpan = document.createElement('span');
+      fallbackSpan.innerText = 'BM';
+      fallbackSpan.style.color = 'white';
+      fallbackSpan.style.fontWeight = 'bold';
+      fallbackSpan.style.fontSize = '20px';
+      const parent = document.getElementById('logoArea');
+      if (parent && logoImg.parentNode) {
+        logoImg.style.display = 'none';
+        parent.appendChild(fallbackSpan);
+      }
+    };
+  }
+
+  function init() {
+    buildSlides();
+    buildProgressBars();
+    initLogo();
+    attachTouchEvents();
+    refreshUIText();
+    startAutoTimer();
+    window.addEventListener('resize', handleResize);
+    // add click listeners for buttons
+    joinBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      alert("Join Banque Misr – flow would open here (demo)");
+    });
+    alreadyText.addEventListener('click', (e) => {
+      e.stopPropagation();
+      alert("Already a customer – sign in flow demo");
+    });
+    langToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleLanguage();
+    });
+  }
+
+  init();
+</script>
+</body>
+</html>
