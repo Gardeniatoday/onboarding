@@ -11,7 +11,7 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      user-select: none; /* similar to native feel, tap/swipe remains */
+      user-select: none;
       -webkit-tap-highlight-color: transparent;
     }
 
@@ -24,7 +24,6 @@
       position: fixed;
     }
 
-    /* main container */
     .app {
       width: 100%;
       height: 100%;
@@ -32,7 +31,6 @@
       background: black;
     }
 
-    /* slides container: absolute to stack images */
     .slides-container {
       position: absolute;
       top: 0;
@@ -66,7 +64,6 @@
       display: block;
     }
 
-    /* gradient overlay (same as flutter) */
     .gradient-overlay {
       position: absolute;
       top: 0;
@@ -85,7 +82,6 @@
       );
     }
 
-    /* fullscreen touch area + swipe/tap */
     .touch-area {
       position: absolute;
       top: 0;
@@ -96,7 +92,6 @@
       cursor: pointer;
     }
 
-    /* top UI elements (progress, logo, lang) */
     .top-ui {
       position: absolute;
       top: 0;
@@ -104,7 +99,7 @@
       width: 100%;
       z-index: 5;
       padding-top: env(safe-area-inset-top, 0);
-      pointer-events: none; /* children that need clicks set pointer-events auto */
+      pointer-events: none;
     }
 
     .progress-bar-row {
@@ -149,10 +144,11 @@
       object-fit: contain;
     }
 
+    /* Language toggle with WHITE ICON */
     .lang-toggle {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       background: transparent;
       padding: 6px 10px;
       border-radius: 30px;
@@ -162,8 +158,19 @@
     .lang-toggle:active { opacity: 0.7; }
 
     .lang-icon {
+      width: 19px;
+      height: 19px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       color: white;
-      font-size: 19px;
+    }
+
+    .lang-icon svg {
+      width: 19px;
+      height: 19px;
+      fill: white;
+      stroke: none;
     }
 
     .lang-text {
@@ -174,7 +181,6 @@
       letter-spacing: 0.3px;
     }
 
-    /* title text */
     .title-wrapper {
       width: 100%;
       padding: 0 24px;
@@ -193,7 +199,6 @@
       margin: 0 auto;
     }
 
-    /* arabic font override */
     body.arabic .slide-title {
       font-family: 'Cairo', sans-serif;
     }
@@ -207,7 +212,6 @@
       font-family: 'Cairo', sans-serif;
     }
 
-    /* bottom CTA */
     .bottom-cta {
       position: absolute;
       bottom: 0;
@@ -262,7 +266,6 @@
       opacity: 0.7;
     }
 
-    /* fallback for images missing */
     .fallback-icon {
       display: flex;
       align-items: center;
@@ -274,7 +277,6 @@
       font-size: 3rem;
     }
 
-    /* responsive adjustments */
     @media (max-width: 480px) {
       .top-row {
         padding: 12px 18px 8px 18px;
@@ -290,7 +292,6 @@
 </head>
 <body>
 <div class="app" id="app">
-  <!-- Slides container with images -->
   <div class="slides-container" id="slidesContainer"></div>
   <div class="gradient-overlay"></div>
   <div class="touch-area" id="touchArea"></div>
@@ -302,7 +303,12 @@
         <img id="logoImg" alt="Banque Misr" style="height:38px;">
       </div>
       <div class="lang-toggle" id="langToggle">
-        <span class="lang-icon">🌐</span>
+        <!-- White language icon (SVG) instead of emoji -->
+        <span class="lang-icon">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="white" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+        </span>
         <span class="lang-text" id="langText">EN</span>
       </div>
     </div>
@@ -318,7 +324,7 @@
 </div>
 
 <script>
-  // ----- DATA (matches the Flutter slides) -----
+  // ----- DATA (matches Flutter slides) -----
   const SLIDES = [
     { titleEn: "Easily manage all your banking", titleAr: "إدارة جميع أعمالك المصرفية بسهولة", asset: "assets/11.png" },
     { titleEn: "Instant transfers, anytime you need", titleAr: "تحويلات فورية في أي وقت تحتاج", asset: "assets/12.png" },
@@ -326,24 +332,18 @@
     { titleEn: "Earn rewards as you spend", titleAr: "اكسب المكافآت أثناء إنفاقك", asset: "assets/14.png" }
   ];
   const TOTAL_SLIDES = SLIDES.length;
-  const SLIDE_DURATION_MS = 5000;       // 5 seconds auto advance
-  const FADE_DURATION_MS = 300;         // matches kFadeDuration
+  const SLIDE_DURATION_MS = 5000;
+  const FADE_DURATION_MS = 300;
 
-  // ----- state -----
   let currentIndex = 0;
-  let currentLocale = 'en';        // 'en' or 'ar'
+  let currentLocale = 'en';
   let autoTimer = null;
-  let progressInterval = null;      // for manual progress bar update (interval based)
-  let animationStartTime = 0;
   let animationFrame = null;
   let progressSegments = [];
 
-  // touch/swipe handling
-  let pointerStartX = 0;
-  let pointerStartY = 0;
+  let pointerStartX = 0, pointerStartY = 0;
   let pointerMoved = false;
 
-  // DOM elements
   const slidesContainer = document.getElementById('slidesContainer');
   const slideTitleEl = document.getElementById('slideTitle');
   const langTextSpan = document.getElementById('langText');
@@ -353,7 +353,6 @@
   const touchArea = document.getElementById('touchArea');
   const logoImg = document.getElementById('logoImg');
 
-  // Helper: build slides DOM
   function buildSlides() {
     slidesContainer.innerHTML = '';
     for (let i = 0; i < TOTAL_SLIDES; i++) {
@@ -364,7 +363,6 @@
       img.src = SLIDES[i].asset;
       img.alt = `slide ${i+1}`;
       img.onerror = function() {
-        // if image fails, show fallback icon
         this.style.display = 'none';
         const fallback = document.createElement('div');
         fallback.className = 'fallback-icon';
@@ -376,18 +374,15 @@
     }
   }
 
-  // update active slide with fade transition (opacity)
   function setActiveSlide(index) {
     const slides = document.querySelectorAll('.slide');
     if (!slides.length) return;
-    // remove active class from all
     slides.forEach((slide, i) => {
       slide.classList.remove('active');
     });
     slides[index].classList.add('active');
   }
 
-  // progress bar builder / update dynamically based on current index and progress (0..1)
   function buildProgressBars() {
     const progressRow = document.getElementById('progressRow');
     if (!progressRow) return;
@@ -423,12 +418,10 @@
       trackDiv.appendChild(segmentOuter);
     }
     progressRow.appendChild(trackDiv);
-    // store references
     progressSegments = Array.from(trackDiv.children).map(div => div.querySelector('.progress-fill'));
-    updateProgressFill(0); // initial
+    updateProgressFill(0);
   }
 
-  // update progress fill: for index < currentIndex -> full, == currentIndex -> given fraction, > -> 0%
   function updateProgressFill(fraction = 0) {
     if (!progressSegments.length) return;
     for (let i = 0; i < TOTAL_SLIDES; i++) {
@@ -444,7 +437,6 @@
     }
   }
 
-  // cancel existing timer & progress animation
   function cancelAutoTimer() {
     if (autoTimer) {
       clearTimeout(autoTimer);
@@ -454,41 +446,29 @@
       cancelAnimationFrame(animationFrame);
       animationFrame = null;
     }
-    if (progressInterval) {
-      clearInterval(progressInterval);
-      progressInterval = null;
-    }
   }
 
-  // start auto slide timer and progress animation (linearly from 0 to 1 over SLIDE_DURATION_MS)
   function startAutoTimer() {
     cancelAutoTimer();
-    const startFraction = 0;
     const startTime = performance.now();
-    function updateProgress(now) {
+    function update(now) {
       const elapsed = now - startTime;
       let fraction = elapsed / SLIDE_DURATION_MS;
       if (fraction >= 1) {
         fraction = 1;
         updateProgressFill(1);
-        // advance to next slide
         advanceToNextSlide();
         return;
       }
       updateProgressFill(fraction);
-      animationFrame = requestAnimationFrame(updateProgress);
+      animationFrame = requestAnimationFrame(update);
     }
-    animationFrame = requestAnimationFrame(updateProgress);
-    // also set a timeout as a fallback to advance exactly after duration
+    animationFrame = requestAnimationFrame(update);
     autoTimer = setTimeout(() => {
-      // if animation didn't trigger advance already, do it
-      if (currentIndex !== undefined) {
-        advanceToNextSlide();
-      }
+      if (currentIndex !== undefined) advanceToNextSlide();
     }, SLIDE_DURATION_MS);
   }
 
-  // refresh title & direction based on locale
   function refreshUIText() {
     const isArabic = currentLocale === 'ar';
     const slide = SLIDES[currentIndex];
@@ -497,7 +477,6 @@
     joinBtn.innerText = isArabic ? 'انضم إلى بنك مصر' : 'Join Banque Misr';
     alreadyText.innerText = isArabic ? 'عميل بالفعل في بنك مصر' : 'Already a BM customer';
 
-    // update html direction & body class for fonts
     const htmlRoot = document.documentElement;
     if (isArabic) {
       htmlRoot.setAttribute('dir', 'rtl');
@@ -508,11 +487,9 @@
     }
   }
 
-  // move to specific slide index (with resetting timer)
   function goToSlide(newIndex, resetTimer = true) {
     if (newIndex === currentIndex) {
       if (resetTimer) {
-        // reset progress animation anyway
         cancelAutoTimer();
         startAutoTimer();
       }
@@ -524,11 +501,6 @@
     setActiveSlide(currentIndex);
     refreshUIText();
     if (resetTimer) {
-      // restart progress animation from 0
-      cancelAutoTimer();
-      startAutoTimer();
-    } else {
-      // if resetTimer false (like from manual swipe after previous) but still keep fresh timer
       cancelAutoTimer();
       startAutoTimer();
     }
@@ -550,50 +522,36 @@
     goToSlide(next, true);
   }
 
-  // toggle language: update locale, rebuild UI text and also refresh title + progress keep slide same
   function toggleLanguage() {
     currentLocale = currentLocale === 'en' ? 'ar' : 'en';
     refreshUIText();
-    // optional: we keep same slide index, but no need to restart timer? keep timer consistent
-    // but to avoid losing progress bar animation we keep current progress fill untouched
-    // but fraction continues correctly. update fill reference doesn't change.
   }
 
-  // handle swipe and tap (matching flutter behavior: in LTR tap left = previous, right = next, but in RTL mirrored)
-  function handleTapOrSwipe(totalDx, totalDy, isSwipe, startSideFraction) {
+  function handleTapOrSwipe(totalDx, totalDy, isSwipe, tapXPosition) {
     const isArabic = currentLocale === 'ar';
-    // Determine if it's a tap based on no significant movement
     if (!isSwipe) {
-      // tap: use screen half detection
       const screenWidth = window.innerWidth;
-      const tapX = startSideFraction * screenWidth; // we stored absolute X when pointer up
       if (isArabic) {
-        // arabic: right side (x > half) => previous, left side => next
-        if (tapX > screenWidth / 2) {
+        if (tapXPosition > screenWidth / 2) {
           goToPrevSlide();
         } else {
           goToNextSlide();
         }
       } else {
-        // LTR: left half -> previous, right half -> next
-        if (tapX < screenWidth / 2) {
+        if (tapXPosition < screenWidth / 2) {
           goToPrevSlide();
         } else {
           goToNextSlide();
         }
       }
     } else {
-      // swipe
       if (isArabic) {
-        // arabic: swipe left (negative dx) => next? wait careful: In RTL UI, physical swipe left means go to "next" slide (since content flows RTL)
-        // from Flutter code: if arabic: totalDx < 0 => _previous() else _next(). So negative dx (left swipe) = previous, positive (right swipe) = next.
         if (totalDx < 0) {
           goToPrevSlide();
         } else {
           goToNextSlide();
         }
       } else {
-        // LTR: swipe left (negative) = next, right (positive) = previous
         if (totalDx < 0) {
           goToNextSlide();
         } else {
@@ -603,13 +561,12 @@
     }
   }
 
-  // ----- Touch / Pointer handling (mouse + touch) -----
   let activePointer = false;
   let startX = 0, startY = 0;
   let hasMoved = false;
 
   function onPointerStart(e) {
-    e.preventDefault(); // avoid any scrolling while swiping
+    e.preventDefault();
     activePointer = true;
     const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
     const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
@@ -647,8 +604,7 @@
     if (isSwipe) {
       handleTapOrSwipe(deltaX, deltaY, true, endX / window.innerWidth);
     } else {
-      // tap
-      handleTapOrSwipe(deltaX, deltaY, false, endX / window.innerWidth);
+      handleTapOrSwipe(deltaX, deltaY, false, endX);
     }
     hasMoved = false;
   }
@@ -667,89 +623,28 @@
     });
   }
 
-  // on window resize, rebuild progress bar layout
   let resizeTimeout;
   function handleResize() {
     if (resizeTimeout) clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(() => {
       buildProgressBars();
-      // restore current progress fraction from active animation? simpler: restart timer? but keep current fraction?
-      // we just rebuild visuals and sync with current progress by reading animation state? we re-init fill from current timer.
-      // since timer runs, we store currentFraction? easier: restart timer to avoid mismatch. But that resets progress for current slide.
-      // Better: get current animation progress from stored animation start? We can recompute manually using elapsed.
-      // Because rebuild progress removes DOM, we must sync progress value again.
-      if (animationFrame) {
-        // we preserve existing timer: we need to know current fraction without resetting user experience.
-        // We'll compute time elapsed from last start? we don't have stored. Actually startAutoTimer sets startTime variable internally.
-        // We'll re-call refresh progress by using stored current animation progress? Simpler: cancel timer and restart with 0 fraction -> not ideal but matches UX after resize.
-        // To preserve seamless, we just rebuild bars, and then restart timer from 0? That would reset progress to 0 but user experience slightly changes but not major.
-        // Better: we keep the timer running but since we rebuild progress bars, we lose fill data. So we capture current fraction using existing progressSegments? but they get destroyed.
-        // We'll get the current fill fraction from stored variable: we can keep a global variable currentProgressFraction.
-        if (window._currentProgressFraction !== undefined) {
-          const frac = window._currentProgressFraction;
-          updateProgressFill(frac);
-        } else {
-          updateProgressFill(0);
-        }
+      if (window._currentProgressFraction !== undefined) {
+        updateProgressFill(window._currentProgressFraction);
       } else {
         updateProgressFill(0);
       }
     }, 150);
   }
 
-  // update progress fraction variable and store
   function setProgressFraction(frac) {
     window._currentProgressFraction = frac;
     updateProgressFill(frac);
   }
 
-  // override startAutoTimer to store fraction and update custom
-  const originalStart = startAutoTimer;
-  startAutoTimer = function() {
-    cancelAutoTimer();
-    const startTime = performance.now();
-    function update(now) {
-      const elapsed = now - startTime;
-      let fraction = elapsed / SLIDE_DURATION_MS;
-      if (fraction >= 1) {
-        fraction = 1;
-        setProgressFraction(1);
-        advanceToNextSlide();
-        return;
-      }
-      setProgressFraction(fraction);
-      animationFrame = requestAnimationFrame(update);
-    }
-    animationFrame = requestAnimationFrame(update);
-    autoTimer = setTimeout(() => {
-      if (currentIndex !== undefined) advanceToNextSlide();
-    }, SLIDE_DURATION_MS);
-  };
+  const originalStartAutoTimer = startAutoTimer;
+  window.startAutoTimer = startAutoTimer;
 
-  // Also fix goToSlide to restart timer properly
-  const originalGoTo = goToSlide;
-  goToSlide = function(newIndex, resetTimer = true) {
-    if (newIndex === currentIndex) {
-      if (resetTimer) {
-        cancelAutoTimer();
-        startAutoTimer();
-      }
-      return;
-    }
-    currentIndex = newIndex;
-    setActiveSlide(currentIndex);
-    refreshUIText();
-    if (resetTimer) {
-      cancelAutoTimer();
-      startAutoTimer();
-    }
-  };
-  window.goToSlide = goToSlide;
-  window.advanceToNextSlide = advanceToNextSlide;
-
-  // fix refresh UI and logo load
   function initLogo() {
-    // Use horizontal.png as per flutter assets expectation; if not exist, show fallback but we attempt
     logoImg.src = "assets/horizontal.png";
     logoImg.onerror = () => {
       logoImg.style.display = 'none';
@@ -774,14 +669,14 @@
     refreshUIText();
     startAutoTimer();
     window.addEventListener('resize', handleResize);
-    // add click listeners for buttons
+    
     joinBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      alert("Join Banque Misr – flow would open here (demo)");
+      alert("Join Banque Misr –开户流程演示");
     });
     alreadyText.addEventListener('click', (e) => {
       e.stopPropagation();
-      alert("Already a customer – sign in flow demo");
+      alert("Already a customer –登录演示");
     });
     langToggle.addEventListener('click', (e) => {
       e.stopPropagation();
